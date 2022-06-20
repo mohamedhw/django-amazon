@@ -1,6 +1,7 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, JsonResponse
 from .models import *
+
 
 
 
@@ -46,3 +47,34 @@ def checkout(request):
     }
 
     return render(request, "store/checkout.html", context)
+
+
+
+def updateitem(request):
+    return JsonResponse('Item was added', safe=False)
+
+
+
+
+# function to add product to the cart
+
+def add_to_cart(request, pk):
+
+    product = get_object_or_404(Product, pk=pk) # get the product and add it to var
+
+    order_item = OrderItem.objects.create(product=product) # create order iteams model for the user 
+
+    order_qs = Order.objects.filter(customer=request.user, ordered=False) # asine the order to the user 
+
+    if order_qs.exists():
+        order = order_qs[0]
+        if order_item in order:
+            order_item.quantity += 1
+            order_item.save()
+    else:
+        order = Order.objects.create(customer=request.user)
+        order.product.add(order_item)
+
+    return redirect("cart", kwargs={'pk':pk}) 
+    
+
